@@ -2,29 +2,25 @@ package kmeans;
 
 import org.apache.hadoop.io.*;
 import org.apache.hadoop.mapreduce.Mapper;
-import org.apache.hadoop.fs.*;
 import java.io.*;
-import java.net.URI;
 import java.util.*;
-import java.io.FileReader;
 
-public class KMeansMapper extends Mapper<LongWritable, Text, Text, Text> {
+public class AssignPointsMapper extends Mapper<LongWritable, Text, Text, Text> {
 
     private List<Centroid> centroids = new ArrayList<>();
 
     @Override
     protected void setup(Context context) throws IOException {
-
-        BufferedReader br = new BufferedReader(new FileReader("centroids.txt"));
+        BufferedReader br = new BufferedReader(new FileReader("final_centroids.txt"));
         String line;
-
         while ((line = br.readLine()) != null) {
+            if (line.startsWith("Converged?")) continue; // skip convergence line
             String[] parts = line.trim().split(",");
             centroids.add(new Centroid(
                     Double.parseDouble(parts[0]),
-                    Double.parseDouble(parts[1])));
+                    Double.parseDouble(parts[1])
+            ));
         }
-
         br.close();
     }
 
@@ -47,7 +43,7 @@ public class KMeansMapper extends Mapper<LongWritable, Text, Text, Text> {
             }
         }
 
-        // Emit centroid key with point and count = 1
-        context.write(new Text(closestCentroid.toString()), new Text(px + "," + py + ",1"));
+        // Output: centroid -> point
+        context.write(new Text(closestCentroid.toString()), new Text(px + "," + py));
     }
 }
